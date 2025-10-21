@@ -1,7 +1,12 @@
-const CACHE_NAME = 'sensor-pwa-v1';
+const CACHE_NAME = 'pwa-v1';
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
+  '/manifest.json',
+  '/src/main.tsx',
+  '/src/App.tsx',
+  '/src/App.css',
+  '/src/index.css'
 ];
 
 self.addEventListener('install', (event) => {

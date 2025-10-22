@@ -1,0 +1,71 @@
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #242424;
+}
+
+.nav {
+  display: flex;
+  border-bottom: 1px solid #333;
+  margin-bottom: 20px;
+}
+
+.tab {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+}
+
+.activeTab {
+  background: #333;
+  color: white;
+}
+
+.tabHover {
+  background: #2a2a2a;
+  color: white;
+}
+
+.refresh {
+  margin-left: auto;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.refresh:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.th {
+  padding: 10px;
+  text-align: left;
+  color: #888;
+  background: #1a1a1a;
+}
+
+.td {
+  padding: 10px;
+  border-bottom: 1px solid #333;
+  color: white;
+}
+
+.message {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}

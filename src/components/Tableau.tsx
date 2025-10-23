@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchWithOfflineSupport } from "../utils/dbService";
 import "./Tableau.css";
+import { sentNotification } from '../main';
 
 const TABS = ["sondes", "toilettes"] as const;
 type TabKey = (typeof TABS)[number];
@@ -11,12 +11,34 @@ export default function Tableau() {
   const [data, setData] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [hoveredButton, setHoveredButton] = useState<TabKey | "refresh" | null>(
     null
   );
 
   const apiBase = import.meta.env.VITE_API_URL;
   const cache = useRef<Record<TabKey, Row[]>>({ sondes: [], toilettes: [] });
+
+  // Gestionnaire des événements en ligne/hors ligne
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      sentNotification("Connexion rétablie");
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      sentNotification("Mode hors ligne activé");
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const fetchData = useCallback(
     async (tab: TabKey, force = false) => {
@@ -34,10 +56,19 @@ export default function Tableau() {
       setError(null);
 
       try {
-        const result = await fetchWithOfflineSupport(`${apiBase}/${tab}`);
+        const response = await fetch(`${apiBase}/${tab}`);
+        
+        if (!response.ok) {
+          throw new Error(`Erreur réseau: ${response.status} ${response.statusText}`);
+        }
 
-        cache.current[tab] = result.data;
-        setData(result.data);
+        const json = await response.json();
+        const data = Array.isArray(json) ? json : json?.data || [json];
+
+        cache.current[tab] = data;
+        setData(data);
+        
+        sentNotification(`Données des ${tab} mises à jour.`);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erreur de chargement");
         setData([]);
@@ -49,12 +80,7 @@ export default function Tableau() {
   );
 
   useEffect(() => {
-    const isOnline = navigator.onLine;
-    if (isOnline || cache.current[tab].length === 0) {
-      fetchData(tab);
-    } else {
-      setData(cache.current[tab]);
-    }
+    fetchData(tab);
   }, [tab, fetchData]);
 
   const columns = data.length
@@ -120,15 +146,16 @@ export default function Tableau() {
         <button
           className={getButtonClass("refresh")}
           onClick={() => {
-            if (navigator.onLine) {
+            if (isOnline) {
               fetchData(tab, true);
             }
           }}
           onMouseEnter={() => setHoveredButton("refresh")}
           onMouseLeave={() => setHoveredButton(null)}
-          disabled={!navigator.onLine}
+          disabled={!isOnline}
+          title={isOnline ? "Rafraîchir les données" : "Hors ligne - rafraîchissement indisponible"}
         >
-          Rafraîchir
+          {isOnline ? "Rafraîchir" : "Hors ligne"}
         </button>
       </div>
       {renderContent()}

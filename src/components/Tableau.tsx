@@ -19,7 +19,6 @@ export default function Tableau() {
   const apiBase = import.meta.env.VITE_API_URL;
   const cache = useRef<Record<TabKey, Row[]>>({ sondes: [], toilettes: [] });
 
-  // Gestionnaire des événements en ligne/hors ligne
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -46,9 +45,11 @@ export default function Tableau() {
         setError("URL API non définie");
         return;
       }
-
       if (!force && cache.current[tab].length > 0) {
         setData(cache.current[tab]);
+        if (!navigator.onLine) {
+          sentNotification(`Affichage des ${tab} depuis le cache (hors-ligne).`);
+        }
         return;
       }
 
@@ -57,7 +58,7 @@ export default function Tableau() {
 
       try {
         const response = await fetch(`${apiBase}/${tab}`);
-        
+
         if (!response.ok) {
           throw new Error(`Erreur réseau: ${response.status} ${response.statusText}`);
         }
@@ -67,11 +68,19 @@ export default function Tableau() {
 
         cache.current[tab] = data;
         setData(data);
-        
-        sentNotification(`Données des ${tab} mises à jour.`);
+
+        sentNotification(`Données des ${tab} mises à jour${force ? ' (rafraîchissement manuel)' : ''}.`);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erreur de chargement");
-        setData([]);
+        const msg = err instanceof Error ? err.message : 'Erreur de chargement';
+
+        if (cache.current[tab].length > 0) {
+          setData(cache.current[tab]);
+          sentNotification(`Affichage des ${tab} depuis le cache (erreur réseau: ${msg}).`);
+        } else {
+          setError(msg);
+          sentNotification(`Erreur lors du chargement des ${tab}: ${msg}`);
+          setData([]);
+        }
       } finally {
         setLoading(false);
       }

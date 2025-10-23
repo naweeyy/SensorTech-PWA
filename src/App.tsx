@@ -1,5 +1,5 @@
-import Tableau from './components/Tableau'
-import './App.css'
+import Tableau from "./components/Tableau";
+import "./App.css";
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
         <Tableau />
       </div>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

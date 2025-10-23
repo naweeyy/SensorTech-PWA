@@ -35,22 +35,23 @@ export default defineConfig({
             urlPattern: ({ url }) => {
               return /\/(sondes|toilettes)$/i.test(url.pathname);
             },
-            handler: 'StaleWhileRevalidate',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'api-cache',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24
               },
-              backgroundSync: {
-                name: 'api-queue',
-                options: {
-                  maxRetentionTime: 24 * 60
-                }
+              networkTimeoutSeconds: 3,
+              cacheableResponse: {
+                statuses: [0, 200]
               }
             }
           }
-        ]
+        ],
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true
       }
     })
   ],

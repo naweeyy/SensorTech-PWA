@@ -79,8 +79,8 @@ export const sentNotification = (message: string) => {
 
 Notes :
 
-> - Les notifications fonctionnent seulement sur `https` (ou `localhost`).
-> - Tu peux améliorer en demandant la permission au démarrage et en utiliser des options (icon, tag, etc.).
+- Les notifications fonctionnent seulement sur `https` (ou `localhost`).
+- Tu peux améliorer en demandant la permission au démarrage et en utiliser des options (icon, tag, etc.).
 
 Composant principal
 

@@ -1,73 +1,99 @@
-# React + TypeScript + Vite
+# SensorTech — README simple
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Description
 
-Currently, two official plugins are available:
+> Application PWA pour consulter les données des capteurs (tabs `sondes` et `toilettes`), avec cache Workbox et notifications locales.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Commandes rapides
 
-## React Compiler
+```bash
+# installer les dépendances
+pnpm install
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+# développement (http://localhost:5173)
+pnpm dev
 
-## Expanding the ESLint configuration
+# build production
+pnpm build
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# servir la build pour tester le SW (http://localhost:4173)
+pnpm preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Configuration API
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+> Crée un fichier `.env` ou ajoute dans ton environnement :
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```env
+VITE_API_URL=https://example.com
 ```
+
+L'app appelle :
+
+- `${VITE_API_URL}/sondes`
+- `${VITE_API_URL}/toilettes`
+
+Vite PWA (extrait de `vite.config.ts`)
+
+> Workbox est configuré pour mettre en cache les requêtes API vers `/sondes` et `/toilettes` (NetworkFirst).
+
+```ts
+VitePWA({
+  registerType: "autoUpdate",
+  includeAssets: ["vite.svg"],
+  manifest: {},
+  workbox: {
+    globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+    runtimeCaching: [
+      {
+        urlPattern: ({ url }) => /\/(sondes|toilettes)$/i.test(url.pathname),
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "api-cache",
+          expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 },
+          networkTimeoutSeconds: 3,
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+    ],
+    cleanupOutdatedCaches: true,
+    skipWaiting: true,
+    clientsClaim: true,
+  },
+});
+```
+
+Notifications (extrait de `src/main.tsx`)
+
+> Fonction simple utilisée par `Tableau.tsx` pour afficher des notifications locales (demande de permission).
+
+```ts
+export const sentNotification = (message: string) => {
+  Notification.requestPermission().then((result) => {
+    if (result === "granted") {
+      new Notification(message);
+    }
+  });
+};
+```
+
+Notes :
+
+> - Les notifications fonctionnent seulement sur `https` (ou `localhost`).
+> - Tu peux améliorer en demandant la permission au démarrage et en utiliser des options (icon, tag, etc.).
+
+Composant principal
+
+> `src/components/Tableau.tsx` gère :
+
+- les onglets `sondes` / `toilettes`
+- le fetch sur `${VITE_API_URL}/{tab}`
+- le fallback vers le cache (cache côté page + Workbox)
+- l'envoi de notifications sur mise à jour, basculement online/offline, et erreurs
+
+Tester le mode hors-ligne
+
+1. `pnpm build`
+2. `pnpm preview`
+3. Ouvrir DevTools → Application → Service Workers et Cache Storage
+4. Mettre le réseau en "Offline" dans DevTools → vérifier que les données en cache sont affichées

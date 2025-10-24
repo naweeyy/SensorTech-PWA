@@ -1,4 +1,4 @@
-# SensorTech — README simple
+# SensorTech PWA
 
 Description
 
